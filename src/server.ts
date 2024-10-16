@@ -34,6 +34,7 @@ app.post('/movies', async (req, res) => {
          res
             .status(409)
             .send({ message: "Já existe um filme com esse título" });
+         return;
       }
 
       await prisma.movie.create({
@@ -63,6 +64,7 @@ app.put('/movies/:id', async (req, res) => {
 
       if (!movie) {
          res.status(404).send({ message: "Filme não encontrado" });
+         return;
       }
 
       const data = { ...req.body };
@@ -88,6 +90,7 @@ app.delete('/movies/:id', async (req, res) => {
 
       if (!movie) {
          res.status(404).send({ message: 'Filme não encontrado' });
+         return;
       }
 
       await prisma.movie.delete({ where: { id } });
@@ -99,6 +102,28 @@ app.delete('/movies/:id', async (req, res) => {
    res.status(200).send();
 });
 
+app.get("/movies/:genreName", async (req, res) => {
+   try {
+      const moviesFilteredByGenreName = await prisma.movie.findMany({
+         include: {
+            genres: true,
+            languages: true,
+         },
+         where: {
+            genres: {
+               name: {
+                  equals: req.params.genreName,
+                  mode: "insensitive",
+               },
+            },
+         },
+      });
+
+      res.status(200).send(moviesFilteredByGenreName);
+   } catch {
+      res.status(500).send({ message: "Falha ao atualizar um filme" });
+   }
+});
 
 app.listen(port, () => {
    console.log(`Servidor em execução em http://localhost:${port}`);
